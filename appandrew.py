@@ -37,7 +37,7 @@ FLAGS = {
     "Legacy": "",
     "Monk Fryston": "g",
     "Whitegate": "r",
-    "Iron Acton": "r",
+    "Iron Acton": "g",
     "Cryogenic Battery System (Synchronous)": "g",
     "Norwich battery storage": "",
     "Bolney Green Energy Hub": "r",
@@ -248,4 +248,5 @@ for i in sorted(st.session_state.open_rows):
             st.caption("No PNG Name for this row.")
 
     st.divider()
+
 
