@@ -124,20 +124,25 @@ def render_sources(text: str):
         else:
             st.markdown(f"- {part}")
 
+def _canon(col: str) -> str:
+    # lower, strip, remove spaces and question marks
+    return str(col).strip().lower().replace(" ", "").replace("?", "")
+
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
-    df.columns = [str(c).strip() for c in df.columns]  # fixes "MW " etc.
 
-    actual_lower = {c.lower(): c for c in df.columns}
+    canon_to_actual = {_canon(c): c for c in df.columns}
+
     rename = {}
     for expected in COLUMNS:
-        key = expected.lower()
-        if key in actual_lower:
-            rename[actual_lower[key]] = expected
+        key = _canon(expected)
+        if key in canon_to_actual:
+            rename[canon_to_actual[key]] = expected
         else:
             df[expected] = ""
 
     df = df.rename(columns=rename)
+
     for c in COLUMNS:
         if c not in df.columns:
             df[c] = ""
@@ -145,6 +150,8 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df[COLUMNS].copy()
 
 @st.cache_data(show_spinner=False)
+
+
 def load_df(path: str) -> pd.DataFrame:
     if not os.path.exists(path):
         raise FileNotFoundError(f"Excel file not found next to app.py: {EXCEL_FILE}")
@@ -210,17 +217,11 @@ with c2:
         collapse_all()
 
 # Show the table (without Comments/Sources/PNG Name if you want it cleaner)
-TABLE_VIEW_COLS = [
-    "Project Name",
-    "Company",
-    "MW",
-    "Location",
-    "Connection date",
-    "Transmission?",
-    "FID reached?",
-]
 
+
+TABLE_VIEW_COLS = ["Project Name", "Company", "MW", "Location", "Transmission?", "FID reached?", "Connection date"]
 df_view = df[TABLE_VIEW_COLS].copy()
+
 df_view["Transmission?"] = df_view["Transmission?"].apply(pretty_transmission)
 df_view["FID reached?"] = df_view["FID reached?"].apply(pretty_fid)
 
@@ -287,6 +288,7 @@ for i in sorted(st.session_state.open_rows):
             st.caption("No PNG Name for this row.")
 
     st.divider()
+
 
 
 
