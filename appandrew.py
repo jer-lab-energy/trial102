@@ -16,10 +16,13 @@ COLUMNS = [
     "MW",
     "Location",
     "Connection date",
+    "Transmission?",
+    "FID reached?",
     "Comments",
     "Sources",
     "PNG Name",
 ]
+
 
 # ✅ Hardcode flags here: "g" (green), "r" (red), else "".
 # Keys should match Excel Project Name (we strip whitespace when matching).
@@ -60,6 +63,8 @@ FLAGS = {
 
 URL_RE = re.compile(r"(https?://[^\s,]+)", re.IGNORECASE)
 
+
+
 def normalize_flag(x: str) -> str:
     x = (x or "").strip().lower()
     return x if x in ("g", "r") else ""
@@ -74,6 +79,25 @@ def safe_str(v) -> str:
     if isinstance(v, float) and pd.isna(v):
         return ""
     return str(v)
+
+def normalize_yn_cell(v) -> str:
+    return safe_str(v).strip().lower()
+
+def pretty_transmission(v) -> str:
+    x = normalize_yn_cell(v)
+    if x == "y":
+        return "Transmission connected"
+    if x == "n":
+        return "Distribution connected"
+    return safe_str(v)
+
+def pretty_fid(v) -> str:
+    x = normalize_yn_cell(v)
+    if x == "y":
+        return "FID reached"
+    if x == "n":
+        return "FID not reached"
+    return safe_str(v)
 
 def png_filename(png_name: str) -> str | None:
     name = (png_name or "").strip()
@@ -186,8 +210,19 @@ with c2:
         collapse_all()
 
 # Show the table (without Comments/Sources/PNG Name if you want it cleaner)
-TABLE_VIEW_COLS = ["Project Name", "Company", "MW", "Location", "Connection date"]
+TABLE_VIEW_COLS = [
+    "Project Name",
+    "Company",
+    "MW",
+    "Location",
+    "Connection date",
+    "Transmission?",
+    "FID reached?",
+]
+
 df_view = df[TABLE_VIEW_COLS].copy()
+df_view["Transmission?"] = df_view["Transmission?"].apply(pretty_transmission)
+df_view["FID reached?"] = df_view["FID reached?"].apply(pretty_fid)
 
 event = st.dataframe(
     style_df(df_view),
@@ -211,6 +246,8 @@ for i in sorted(st.session_state.open_rows):
     mw = safe_str(row.get("MW", ""))
     location = safe_str(row.get("Location", ""))
     conn_date = safe_str(row.get("Connection date", ""))
+    transmission = pretty_transmission(row.get("Transmission?", ""))
+    fid = pretty_fid(row.get("FID reached?", ""))
 
     st.markdown(f"### {pname}")
 
@@ -226,6 +263,8 @@ for i in sorted(st.session_state.open_rows):
 - **MW:** {mw or "—"}
 - **Location:** {location or "—"}
 - **Connection date:** {conn_date or "—"}
+- **Transmission?:** {transmission or "—"}
+- **FID reached?:** {fid or "—"}
             """.strip()
         )
 
@@ -248,5 +287,6 @@ for i in sorted(st.session_state.open_rows):
             st.caption("No PNG Name for this row.")
 
     st.divider()
+
 
 
